@@ -2,3 +2,5 @@
 bank.db
 venv/
 requires
+.idea
+__pycache__
