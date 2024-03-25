@@ -11,6 +11,8 @@ class DashboardApp:
     def __init__(self, root, user):
         self.root = root
         self.user = user
+        database = 'bank.db'
+        self.conn = create_connection(database)
         self.root.title("Bank Application")
         self.initialize_main_window()
 
@@ -87,6 +89,7 @@ class DashboardApp:
 
     def logout(self):
         self.user = None
+        self.conn.close()
         self.root.destroy()
 
     def deposit_window(self):
@@ -95,8 +98,7 @@ class DashboardApp:
             user_id = self.user.get('id')
             deposit_amount = new_balance_entry.get()
             if float(deposit_amount) > 0:
-                database = 'bank.db'
-                conn = create_connection(database)
+                conn = self.conn
                 updated_user = update_balance(conn, user_id, float(deposit_amount))
                 create_transaction(conn, user_id, ' deposited', deposit_amount)
                 self.user = updated_user
@@ -132,8 +134,7 @@ class DashboardApp:
             balance = float(self.user.get('balance'))
             if balance > withdraw_amount:
                 if float(withdraw_amount) > 0:
-                    database = 'bank.db'
-                    conn = create_connection(database)
+                    conn = self.conn
                     updated_user = update_balance(conn, user_id,
                                                   withdraw_amount,
                                                   withdraw=True)
@@ -185,8 +186,7 @@ class DashboardApp:
         tree.heading("#3", text="Date")  # Corrected column heading
         tree.heading("#4", text="From user")
 
-        database = 'bank.db'
-        conn = create_connection(database)
+        conn = self.conn
         transactions = get_transactions(conn, self.user.get('id'))
         for row in transactions:
             cleaned_row = [value if value != 'from' else 'N/A' for value in row]
@@ -212,13 +212,10 @@ class DashboardApp:
                 messagebox.showerror(title='Incorrect input',
                                      message='You dont have enough balance')
             else:
-                database = 'bank.db'
-                conn = create_connection(database)
+                conn = self.conn
                 #Transfer money and get new user model for dashboard
                 updated_user = money_transfer(conn, self_id, user_id, amount)
                 if updated_user is not None:
-                    # If transfer was successful create transactions for both user
-                    conn = create_connection(database)
                     create_transaction(conn, self_id, 'sent', amount, user_id)
                     create_transaction(conn, user_id, 'received', amount, self_id)
                     self.user = updated_user
@@ -277,8 +274,7 @@ class DashboardApp:
             else:
                 return True
         def confirm_update():
-            database = 'bank.db'
-            conn = create_connection(database)
+            conn = self.conn
             username = var_username.get()
             last_name = var_lastname.get()
             id_number = var_idnumber.get()
@@ -286,7 +282,6 @@ class DashboardApp:
             password = self.user.get('password')
             user_id = self.user.get('id')
 
-            print(username, last_name, id_number, date, password, user_id)
             if clean_fields([username, last_name, id_number, date]):
                 user = update_user(conn, username, id_number, password,
                                    last_name, date, user_id)
@@ -354,16 +349,13 @@ class DashboardApp:
             try:
                 if to_cur != from_cur:
                     if exchange_amount < balance:
-                        database = 'bank.db'
-                        conn = create_connection(database)
+                        conn = self.conn
 
                         result = response['rates'][from_cur]*response['rates'][to_cur]*exchange_amount
                         user_id = self.user.get('id')
 
                         updated_user = update_balance(conn, user_id, exchange_amount, withdraw=True)
-                        # Open connection to database once again because update_balance
-                        # Closed it
-                        conn = create_connection(database)
+
                         create_transaction(conn, action=f'exchanged to {to_cur}',
                                            amount=exchange_amount,
                                            user_id=user_id)

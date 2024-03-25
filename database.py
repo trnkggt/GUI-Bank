@@ -13,7 +13,6 @@ def create_connection(db_file):
     conn = None
     try:
         conn = sqlite3.connect(db_file)
-        print(sqlite3.version)
     except Error as e:
         print(e)
 
@@ -85,7 +84,6 @@ def create_user(conn, id_number, name, last_name, password, birth_date, balance=
     cur.execute(sql, user_data)
     conn.commit()
     user = cur.lastrowid
-    conn.close()
     return user
 
 
@@ -104,7 +102,6 @@ def login_user(conn, user_name, last_name, id_number, password):
         cur.execute(retrieve_user_sql, user_data)
 
         user = cur.fetchone()
-        conn.close()
         if user:
             # Retrieve user using provided name last name and id
             # using bcrypt.checkpw we check saved hash password against
@@ -159,7 +156,6 @@ def update_balance(conn, id, balance, withdraw=False):
             conn.commit()
             cur.execute('SELECT * FROM users WHERE id = ?', (int(id),))
             user = cur.fetchone()
-            conn.close()
             return dictify(user)
     except sqlite3.Error as e:
         print(e)
@@ -184,7 +180,6 @@ def update_user(conn, user_name, id_number,
             update_sql = "UPDATE users SET password = ? WHERE name = ? AND id_number = ?"
             cur.execute(update_sql, (password, user_name, id_number))
             conn.commit()
-            conn.close()
             return True
         else:
             cur = conn.cursor()
@@ -194,7 +189,6 @@ def update_user(conn, user_name, id_number,
             conn.commit()
             cur.execute('SELECT * FROM users WHERE id = ?', (user_id, ))
             user = cur.fetchone()
-            conn.close()
             return dictify(user)
     except sqlite3.Error as e:
         print('SQLite error: ', e)
@@ -218,14 +212,12 @@ def create_transaction(conn, user_id, action, amount, from_user=None):
             cur = conn.cursor()
             cur.execute(transaction_sql, data)
             conn.commit()
-            conn.close()
         else:
             transaction_sql = """INSERT INTO transactions(user_id, action, amount, 'from') VALUES(?,?,?,?)"""
             data = (user_id, action, amount, from_user)
             cur = conn.cursor()
             cur.execute(transaction_sql, data)
             conn.commit()
-            conn.close()
     except sqlite3.Error as e:
         print(e)
 
@@ -263,7 +255,6 @@ def money_transfer(conn, current_user_id, to_user_id, amount):
         cur.execute('SELECT * FROM users WHERE id = ?', (current_user_id,))
         user = cur.fetchone()
         conn.commit()
-        conn.close()
         return dictify(user)
     except sqlite3.Error as e:
         print('SQLite error: ', e)

@@ -101,13 +101,11 @@ class RegisterWindow:
                 salt = bcrypt.gensalt()
                 hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
                 stored = hashed.decode('utf-8')
-                print(hashed)
                 create_user(conn, id_number, name, last_name, stored, birth_date, balance=0)
 
                 # Reopen connection to database because create_user closed it
                 conn = create_connection(database)
                 user = login_user(conn, name, last_name, id_number, password)
-                print(name, last_name, password)
                 # Close the registration window
                 self.register_window.destroy()
 
